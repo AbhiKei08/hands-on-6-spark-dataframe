@@ -22,64 +22,102 @@ task4_best_days_output = output_dir + "task4_best_days.csv"
 task4_worst_days_output = output_dir + "task4_worst_days.csv"
 
 # ------------------------
-# Task 1: Descriptive Statistics for Weather Conditions (Use Spark SQL)
+# Task 1: Descriptive Statistics for Weather Conditions
 # ------------------------
 def task1_descriptive_stats(weather_df):
-    # TODO: Implement the code for Task 1: Basic Descriptive Statistics for Weather Conditions
-    # Enforce the use of Spark SQL
-    # Steps:
-    # 1. Register the DataFrame as a temporary SQL table using createOrReplaceTempView().
-    # 2. Write a Spark SQL query to calculate:
-    #    - Average, minimum, and maximum temperature (MaxTemp, MinTemp) for each location.
-    #    - Average precipitation and wind speed for each location.
-    #    - Sort the locations by average temperature in descending order.
-    # 3. Use spark.sql() to execute the query and return the results.
-
+    # Calculate average, minimum, and maximum temperature for each location
+    desc_stats = weather_df.groupBy("Location").agg(
+        avg("MaxTemp").alias("AvgMaxTemp"),
+        avg("MinTemp").alias("AvgMinTemp"),
+        min("MaxTemp").alias("MinMaxTemp"),
+        max("MaxTemp").alias("MaxMaxTemp"),
+        avg("Precipitation").alias("AvgPrecipitation"),
+        avg("WindSpeed").alias("AvgWindSpeed")
+    ).orderBy(col("AvgMaxTemp").desc())
+    
+    # Show the result
+    desc_stats.show()
+    
     # Write the result to a CSV file
-    # Uncomment the line below after implementing the logic
-    # desc_stats.write.csv(task1_output, header=True)
+    desc_stats.write.csv(task1_output, header=True)
     print(f"Task 1 output written to {task1_output}")
-
 
 # ------------------------
 # Task 2: Identifying Extreme Weather Events
 # ------------------------
 def task2_extreme_weather(weather_df):
-    # TODO: Implement the code for Task 2: Identifying Extreme Weather Events
-    # Hint: Filter based on extreme conditions for MaxTemp, MinTemp, Precipitation, WindSpeed
-
+    # Define extreme weather conditions
+    extreme_weather = weather_df.filter(
+        (col("MaxTemp") > 40) | 
+        (col("MinTemp") < -10) | 
+        (col("Precipitation") > 50) | 
+        (col("WindSpeed") > 50)
+    )
+    
+    # Count the number of extreme weather events for each location
+    extreme_weather_count = extreme_weather.groupBy("Location").agg(
+        count("*").alias("ExtremeWeatherCount")
+    ).orderBy(col("ExtremeWeatherCount").desc())
+    
+    # Show the result
+    extreme_weather.show()
+    extreme_weather_count.show()
+    
     # Write the result to a CSV file
-    # Uncomment the line below after implementing the logic
-    # extreme_weather_count.write.csv(task2_output, header=True)
+    extreme_weather.write.csv(task2_output, header=True)
     print(f"Task 2 output written to {task2_output}")
 
 # ------------------------
 # Task 3: Analyzing Weather Trends Over Time
 # ------------------------
 def task3_weather_trends(weather_df):
-    # TODO: Implement the code for Task 3: Analyzing Weather Trends Over Time
-    # Hint: Add month, year columns and calculate monthly averages
-
+    # Add month and year columns for time-based analysis
+    weather_with_time = weather_df.withColumn("Month", month("Date")).withColumn("Year", year("Date"))
+    
+    # Select a few cities and calculate monthly averages
+    cities = ['City1', 'City2']  # Replace with actual city names
+    weather_trend = weather_with_time.filter(col("Location").isin(cities)).groupBy("Location", "Year", "Month").agg(
+        avg("MaxTemp").alias("AvgMaxTemp"),
+        avg("MinTemp").alias("AvgMinTemp"),
+        avg("Precipitation").alias("AvgPrecipitation")
+    ).orderBy("Location", "Year", "Month")
+    
+    # Show the result
+    weather_trend.show()
+    
     # Write the result to a CSV file
-    # Uncomment the line below after implementing the logic
-    # weather_trend.write.csv(task3_output, header=True)
+    weather_trend.write.csv(task3_output, header=True)
     print(f"Task 3 output written to {task3_output}")
 
 # ------------------------
 # Task 4: Finding the Best and Worst Days for Outdoor Activities
 # ------------------------
 def task4_best_and_worst_days(weather_df):
-    # TODO: Implement the code for Task 4: Finding the Best and Worst Days for Outdoor Activities
-    # Hint: Use filters for "best" and "worst" days based on weather conditions
-
+    # Define conditions for the best days for outdoor activities
+    best_days = weather_df.filter(
+        (col("MaxTemp").between(20, 30)) &
+        (col("Precipitation") < 5) &
+        (col("WindSpeed") < 15)
+    )
+    
+    # Define conditions for the worst days for outdoor activities
+    worst_days = weather_df.filter(
+        (col("MaxTemp") < 0) | 
+        (col("MaxTemp") > 35) | 
+        (col("Precipitation") > 30) | 
+        (col("WindSpeed") > 40)
+    )
+    
+    # Show the results
+    best_days.show()
+    worst_days.show()
+    
     # Write the best days to a CSV file
-    # Uncomment the line below after implementing the logic
-    # best_days.write.csv(task4_best_days_output, header=True)
+    best_days.write.csv(task4_best_days_output, header=True)
     print(f"Best Days output written to {task4_best_days_output}")
-
+    
     # Write the worst days to a CSV file
-    # Uncomment the line below after implementing the logic
-    # worst_days.write.csv(task4_worst_days_output, header=True)
+    worst_days.write.csv(task4_worst_days_output, header=True)
     print(f"Worst Days output written to {task4_worst_days_output}")
 
 # ------------------------
